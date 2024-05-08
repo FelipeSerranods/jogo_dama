@@ -2,21 +2,20 @@ import Dama from './Dama.js';
 class UI {
     constructor(jogo) {
         this.jogo = jogo;
-        this.modelo = document.getElementById("modeloInicial");
         this.jogoElemento = document.getElementById("jogo");
     }
 
     construirTabuleiro() {
         this.jogoElemento.innerHTML = "";
-        let black = 0;
-        let white = 0;
+        let preta = 0;
+        let branca = 0;
         for (let i = 0; i < this.jogo.tabuleiro.tabuleiro.length; i++) {
             const element = this.jogo.tabuleiro.tabuleiro[i];
-            let linha = document.createElement("div"); // create div for each linha
+            let linha = document.createElement("div"); 
             linha.setAttribute("class", "linha");
 
             for (let j = 0; j < element.length; j++) {
-                let col = document.createElement("div"); // create div for each case
+                let col = document.createElement("div"); 
                 let dama = document.createElement("div");
                 let caseType = "";
                 let ocupado = "";
@@ -35,29 +34,22 @@ class UI {
                     }
                 }
 
-                // add the dama if the case isn't empty
                 if (this.jogo.tabuleiro.tabuleiro[i][j] === 1) {
                     ocupado = "damaBranca";
                 } else if (this.jogo.tabuleiro.tabuleiro[i][j] === -1) {
                     ocupado = "damaPreta";
                 } else {
-                    ocupado = "empty";
+                    ocupado = "vazio";
                 }
 
                 dama.setAttribute("class", "ocupado " + ocupado);
-
-                // set linha and colum in the case
                 dama.setAttribute("linha", i);
                 dama.setAttribute("coluna", j);
                 dama.setAttribute("data-position", i + "-" + j);
-
-                //add event listener to each dama
                 dama.addEventListener("click", (event) => {
                     if (this.jogo.jogadorAtual === -1 && this.jogo.iaAtivada) {
-                        // Se for a vez da IA jogar, não fazer nada ao clicar na peça preta
                         return;
                     }
-                    // Caso contrário, chamar a função movedama normalmente
                     this.jogo.moverDama(event);
                 });
 
@@ -68,20 +60,15 @@ class UI {
 
                 // counter number of each dama
                 if (this.jogo.tabuleiro.tabuleiro[i][j] === -1) {
-                    black++;
+                    preta++;
                 } else if (this.jogo.tabuleiro.tabuleiro[i][j] === 1) {
-                    white++;
+                    branca++;
                 }
 
-                //display the number of dama for each player
-                this.displayCounter(black, white);
+                this.displayCounter(preta, branca);
             }
 
             this.jogoElemento.appendChild(linha);
-        }
-
-        if (this.jogo.jogoIniciar && (black === 0 || white === 0)) {
-            this.modeloOpen(black);
         }
     }
 
@@ -106,21 +93,11 @@ class UI {
         }
     }
 
-    displayCounter(black, white) {
-        var blackContainer = document.getElementById("contador-damasPretas");
-        var whiteContainer = document.getElementById("contador-damasBrancas");
-        blackContainer.innerHTML = black;
-        whiteContainer.innerHTML = white;
-    }
-
-    modeloOpen(black) {
-        document.getElementById("vencedor").innerHTML = black === 0 ? "White" : "Black";
-        document.getElementById("perdedor").innerHTML = black !== 0 ? "White" : "Black";
-        this.modelo.classList.add("effect");
-    }
-
-    fecharModelo() {
-        this.modelo.classList.remove("effect");
+    displayCounter(preta, branco) {
+        var containerPreto = document.getElementById("contador-damasPretas");
+        var containerBranco = document.getElementById("contador-damasBrancas");
+        containerPreto.innerHTML = preta;
+        containerBranco.innerHTML = branco;
     }
 }
 export default UI;

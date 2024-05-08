@@ -6,115 +6,194 @@ class Ia {
     }
 
     executar() {
+        const damasPretas = this.encontrarDamasPretas();
+        const damasValidas = this.filtrarDamasValidas(damasPretas);
+        const damasValidasCapturadas = this.filtrarDamasValidasParaCaptura(damasPretas);
+        const damasReisCapturadoras = damasPretas.filter(dama => dama.rei && this.podeCapturar(dama));
+
+        if (damasReisCapturadoras.length > 0) {
+            this.executarCaptura(damasReisCapturadoras);
+        } else if (damasValidasCapturadas.length > 0) {
+            this.executarCaptura(damasValidasCapturadas);
+        } else if (damasValidas.length > 0) {
+            this.executarMovimento(damasValidas);
+        }
+    }
+
+
+    encontrarDamasPretas() {
         let damasPretas = [];
         for (let i = 0; i < this.jogo.tabuleiro.tabuleiro.length; i++) {
             for (let j = 0; j < this.jogo.tabuleiro.tabuleiro[i].length; j++) {
                 if (this.jogo.tabuleiro.tabuleiro[i][j] === -1) {
-                    damasPretas.push(new Dama(i, j));
+                    let dama = new Dama(i, j);
+                    if (i === 9) {
+                        dama.promoverDama();
+                        console.log("Virei REIII");
+                    }
+                    damasPretas.push(dama);
                 }
             }
         }
+        return damasPretas;
+    }
 
-        console.log(`Total de peças pretas: ${damasPretas.length}`);
+    filtrarDamasValidas(damasPretas) {
+        return damasPretas.filter(dama => dama.rei ? this.podeMoverComoRei(dama) : this.podeMoverParaBaixo(dama));
+    }
 
-        // Filtrar as peças que podem se mover para uma posição vazia na diagonal abaixo
-        let damasValidas = damasPretas.filter(dama => {
-            let baixoEsquerda = (dama.linha + 1 < this.jogo.tabuleiro.tabuleiro.length && dama.coluna - 1 >= 0 && this.jogo.tabuleiro.tabuleiro[dama.linha + 1][dama.coluna - 1] === 0);
-            let baixoDireita = (dama.linha + 1 < this.jogo.tabuleiro.tabuleiro.length && dama.coluna + 1 < this.jogo.tabuleiro.tabuleiro[0].length && this.jogo.tabuleiro.tabuleiro[dama.linha + 1][dama.coluna + 1] === 0);
-            return baixoEsquerda || baixoDireita;
-        });
+    podeMoverParaBaixo(dama) {
+        let baixoEsquerda = this.verificarMovimento(dama, 1, -1);
+        let baixoDireita = this.verificarMovimento(dama, 1, 1);
+        return baixoEsquerda || baixoDireita;
+    }
 
-        console.log(`Peças elegíveis para movimento: ${damasValidas.length}`);
+    podeMoverComoRei(dama) {
+        let baixoEsquerda = this.verificarMovimento(dama, 1, -1);
+        let baixoDireita = this.verificarMovimento(dama, 1, 1);
+        let cimaEsquerda = this.verificarMovimento(dama, -1, -1);
+        let cimaDireita = this.verificarMovimento(dama, -1, 1);
+        return baixoEsquerda || baixoDireita || cimaEsquerda || cimaDireita;
+    }
 
-        let damasValidasCapturadas = damasPretas.filter(dama => {
-            let habilitarCaptura = false;
-            if (dama.linha + 2 < this.jogo.tabuleiro.tabuleiro.length && dama.coluna - 2 >= 0) {
-                if (this.jogo.tabuleiro.tabuleiro[dama.linha + 1][dama.coluna - 1] === 1 && this.jogo.tabuleiro.tabuleiro[dama.linha + 2][dama.coluna - 2] === 0) {
-                    habilitarCaptura = true;
-                }
-            }
-            if (dama.linha + 2 < this.jogo.tabuleiro.tabuleiro.length && dama.coluna + 2 < this.jogo.tabuleiro.tabuleiro[0].length) {
-                if (this.jogo.tabuleiro.tabuleiro[dama.linha + 1][dama.coluna + 1] === 1 && this.jogo.tabuleiro.tabuleiro[dama.linha + 2][dama.coluna + 2] === 0) {
-                    habilitarCaptura = true;
-                }
-            }
-            return habilitarCaptura;
-        });
-        
-        // Se houver peças elegíveis para captura
-        if (damasValidasCapturadas.length > 0) {
-            // Escolher uma peça aleatória entre as elegíveis para captura
-            const indexParaCapturar = Math.floor(Math.random() * damasValidasCapturadas.length);
-            const damaParaCapturar = damasValidasCapturadas[indexParaCapturar];
-            
-            // Determinar em qual direção a peça pode capturar
-            let capturarBaixoEsquerda = (damaParaCapturar.linha + 2 < this.jogo.tabuleiro.tabuleiro.length && damaParaCapturar.coluna - 2 >= 0 &&
-                this.jogo.tabuleiro.tabuleiro[damaParaCapturar.linha + 1][damaParaCapturar.coluna - 1] === 1 && this.jogo.tabuleiro.tabuleiro[damaParaCapturar.linha + 2][damaParaCapturar.coluna - 2] === 0);
-            let capturarBaixoDireita = (damaParaCapturar.linha + 2 < this.jogo.tabuleiro.tabuleiro.length && damaParaCapturar.coluna + 2 < this.jogo.tabuleiro.tabuleiro[0].length &&
-                this.jogo.tabuleiro.tabuleiro[damaParaCapturar.linha + 1][damaParaCapturar.coluna + 1] === 1 && this.jogo.tabuleiro.tabuleiro[damaParaCapturar.linha + 2][damaParaCapturar.coluna + 2] === 0);
-        
-            // Escolher aleatoriamente uma direção de captura
-            let captureDirection = capturarBaixoEsquerda ? 'esquerda' : 'direita';
-        
-            // Remover a peça adversária capturada da direção selecionada
-            if (captureDirection === 'esquerda') {
-                this.jogo.tabuleiro.tabuleiro[damaParaCapturar.linha + 1][damaParaCapturar.coluna - 1] = 0; // Remover a peça adversária capturada
-            } else {
-                this.jogo.tabuleiro.tabuleiro[damaParaCapturar.linha + 1][damaParaCapturar.coluna + 1] = 0; // Remover a peça adversária capturada
-            }
-        
-            // Mover a peça para a nova posição na direção selecionada
-            if (captureDirection === 'esquerda') {
-                this.jogo.tabuleiro.tabuleiro[damaParaCapturar.linha][damaParaCapturar.coluna] = 0; // Remover a peça da posição atual
-                this.jogo.tabuleiro.tabuleiro[damaParaCapturar.linha + 2][damaParaCapturar.coluna - 2] = -1; // Mover a peça para a nova posição
-            } else {
-                this.jogo.tabuleiro.tabuleiro[damaParaCapturar.linha][damaParaCapturar.coluna] = 0; // Remover a peça da posição atual
-                this.jogo.tabuleiro.tabuleiro[damaParaCapturar.linha + 2][damaParaCapturar.coluna + 2] = -1; // Mover a peça para a nova posição
-            }
-        
-            // Atualizar a exibição do tabuleiro após a captura
-            this.jogo.ui.construirTabuleiro();
-            this.jogo.jogadorAtual = this.jogo.trocarJogador(this.jogo.jogadorAtual);
-            this.jogo.ui.showJogadorAtual();
+    verificarMovimento(dama, deslocamentoLinha, deslocamentoColuna) {
+        let novaLinha = dama.linha + deslocamentoLinha;
+        let novaColuna = dama.coluna + deslocamentoColuna;
+        // Verifica se a nova posição está dentro dos limites do tabuleiro
+        if (novaLinha < 0 || novaLinha >= this.jogo.tabuleiro.tabuleiro.length ||
+            novaColuna < 0 || novaColuna >= this.jogo.tabuleiro.tabuleiro[0].length) {
+            return false;
+        }
+        return this.jogo.tabuleiro.tabuleiro[novaLinha][novaColuna] === 0;
+    }
+
+    filtrarDamasValidasParaCaptura(damasPretas) {
+        return damasPretas.filter(dama => this.podeCapturar(dama));
+    }
+
+    podeCapturar(dama) {
+        // Se a dama é um rei, verifica todas as direções
+        if (dama.rei) {
+            return this.verificarCaptura(dama, -2, -2) || this.verificarCaptura(dama, -2, 2) ||
+                this.verificarCaptura(dama, 2, -2) || this.verificarCaptura(dama, 2, 2);
         } else {
-            if (damasValidas.length > 0) {
-                const indexParaDama = Math.floor(Math.random() * damasValidas.length);
-                const damaMovimento = damasValidas[indexParaDama];
-                console.log(`Peça escolhida para mover: linha ${damaMovimento.linha}, coluna ${damaMovimento.coluna}`);
-
-                // Encontrar todas as novas posições possíveis para a peça escolhida
-                let possiveisNovasPosicoes = [];
-
-                // Verificar se a peça pode se mover para a diagonal abaixo à esquerda
-                if (damaMovimento.linha + 1 < this.jogo.tabuleiro.tabuleiro.length && damaMovimento.coluna - 1 >= 0 && this.jogo.tabuleiro.tabuleiro[damaMovimento.linha + 1][damaMovimento.coluna - 1] === 0) {
-                    possiveisNovasPosicoes.push(new Dama(damaMovimento.linha + 1, damaMovimento.coluna - 1));
-                }
-
-                // Verificar se a peça pode se mover para a diagonal abaixo à direita
-                if (damaMovimento.linha + 1 < this.jogo.tabuleiro.tabuleiro.length && damaMovimento.coluna + 1 < this.jogo.tabuleiro.tabuleiro[0].length && this.jogo.tabuleiro.tabuleiro[damaMovimento.linha + 1][damaMovimento.coluna + 1] === 0) {
-                    possiveisNovasPosicoes.push(new Dama(damaMovimento.linha + 1, damaMovimento.coluna + 1));
-                }
-
-                console.log(`Posições novas possíveis: ${possiveisNovasPosicoes.length}`);
-
-                // Escolher uma nova posição aleatória para a peça, se houver posições disponíveis
-                if (possiveisNovasPosicoes.length > 0) {
-                    const indexParaPossiveisPosicoes = Math.floor(Math.random() * possiveisNovasPosicoes.length);
-                    const novaPosicao= possiveisNovasPosicoes[indexParaPossiveisPosicoes];
-                    console.log(`Movendo peça para: linha ${novaPosicao.linha}, coluna ${novaPosicao.coluna}`);
-
-                    // Mover a peça para a nova posição escolhida
-                    this.jogo.tabuleiro.tabuleiro[damaMovimento.linha][damaMovimento.coluna] = 0; // Remover a peça da posição atual
-                    this.jogo.tabuleiro.tabuleiro[novaPosicao.linha][novaPosicao.coluna] = -1; // Mover a peça para a nova posição
-
-                    // Atualizar a exibição do tabuleiro após o movimento
-                    this.jogo.ui.construirTabuleiro();
-                    this.jogo.jogadorAtual = this.jogo.trocarJogador(this.jogo.jogadorAtual);
-                    this.jogo.ui.showJogadorAtual();
-                }
-            }
+            // Se a dama não é um rei, verifica apenas as diagonais para baixo
+            return this.verificarCaptura(dama, 2, -2) || this.verificarCaptura(dama, 2, 2);
         }
     }
+
+    verificarCaptura(dama, deslocamentoLinha, deslocamentoColuna) {
+        let meioLinha = dama.linha + deslocamentoLinha / 2;
+        let meioColuna = dama.coluna + deslocamentoColuna / 2;
+        let finalLinha = dama.linha + deslocamentoLinha;
+        let finalColuna = dama.coluna + deslocamentoColuna;
+        return meioLinha < this.jogo.tabuleiro.tabuleiro.length &&
+            meioColuna >= 0 &&
+            meioColuna < this.jogo.tabuleiro.tabuleiro[0].length &&
+            finalLinha < this.jogo.tabuleiro.tabuleiro.length &&
+            finalColuna >= 0 &&
+            finalColuna < this.jogo.tabuleiro.tabuleiro[0].length &&
+            this.jogo.tabuleiro.tabuleiro[meioLinha][meioColuna] === 1 &&
+            this.jogo.tabuleiro.tabuleiro[finalLinha][finalColuna] === 0;
+    }
+
+    executarCaptura(damasValidasCapturadas) {
+        const indexParaCapturar = Math.floor(Math.random() * damasValidasCapturadas.length);
+        const damaParaCapturar = damasValidasCapturadas[indexParaCapturar];
+
+        // Determina as direções possíveis de captura com base se a dama é um rei
+        let direcoesPossiveis = [];
+        if (this.verificarCaptura(damaParaCapturar, -2, -2)) direcoesPossiveis.push('cimaEsquerda');
+        if (this.verificarCaptura(damaParaCapturar, -2, 2)) direcoesPossiveis.push('cimaDireita');
+        if (this.verificarCaptura(damaParaCapturar, 2, -2)) direcoesPossiveis.push('baixoEsquerda');
+        if (this.verificarCaptura(damaParaCapturar, 2, 2)) direcoesPossiveis.push('baixoDireita');
+
+        // Escolhe uma direção aleatória de captura das possíveis
+        let direcaoEscolhida = direcoesPossiveis[Math.floor(Math.random() * direcoesPossiveis.length)];
+
+        // Executa a captura na direção escolhida
+        if (direcaoEscolhida === 'cimaEsquerda') {
+            this.removerPecaAdversaria(damaParaCapturar, -1, -1);
+            this.moverPeca(damaParaCapturar, -2, -2);
+        } else if (direcaoEscolhida === 'cimaDireita') {
+            this.removerPecaAdversaria(damaParaCapturar, -1, 1);
+            this.moverPeca(damaParaCapturar, -2, 2);
+        } else if (direcaoEscolhida === 'baixoEsquerda') {
+            this.removerPecaAdversaria(damaParaCapturar, 1, -1);
+            this.moverPeca(damaParaCapturar, 2, -2);
+        } else if (direcaoEscolhida === 'baixoDireita') {
+            this.removerPecaAdversaria(damaParaCapturar, 1, 1);
+            this.moverPeca(damaParaCapturar, 2, 2);
+        }
+        // Atualiza o tabuleiro
+        this.atualizarTabuleiro();
+    }
+
+    executarMovimento(damasValidas) {
+        // Log antes de escolher a peça
+        console.log('Antes de escolher a peça para mover:', this.jogo.tabuleiro.tabuleiro);
+
+        const indexParaDama = Math.floor(Math.random() * damasValidas.length);
+        const damaMovimento = damasValidas[indexParaDama];
+        console.log(`Peça escolhida para mover: linha ${damaMovimento.linha}, coluna ${damaMovimento.coluna}`);
+
+        // Log antes de encontrar posições possíveis
+        console.log('Antes de encontrar novas posições:', this.jogo.tabuleiro.tabuleiro);
+
+        let possiveisNovasPosicoes = this.encontrarPossiveisMovimentos(damaMovimento);
+        console.log(`Posições novas possíveis: ${possiveisNovasPosicoes.length}`);
+
+        // Log antes de mover a peça
+        console.log('Antes de mover a peça:', this.jogo.tabuleiro.tabuleiro);
+
+        if (possiveisNovasPosicoes.length > 0) {
+            const indexParaPossiveisPosicoes = Math.floor(Math.random() * possiveisNovasPosicoes.length);
+            const novaPosicao = possiveisNovasPosicoes[indexParaPossiveisPosicoes];
+            console.log(`Movendo peça para: linha ${novaPosicao.linha}, coluna ${novaPosicao.coluna}`);
+
+            this.moverPeca(damaMovimento, novaPosicao.linha - damaMovimento.linha, novaPosicao.coluna - damaMovimento.coluna);
+
+            // Log após mover a peça
+            console.log('Após mover a peça:', this.jogo.tabuleiro.tabuleiro);
+        }
+        this.atualizarTabuleiro();
+    }
+
+    removerPecaAdversaria(dama, deslocamentoLinha, deslocamentoColuna) {
+        let linhaAdversario = dama.linha + deslocamentoLinha;
+        let colunaAdversario = dama.coluna + deslocamentoColuna;
+        this.jogo.tabuleiro.tabuleiro[linhaAdversario][colunaAdversario] = 0;
+    }
+
+    moverPeca(dama, deslocamentoLinha, deslocamentoColuna) {
+        let novaLinha = dama.linha + deslocamentoLinha;
+        let novaColuna = dama.coluna + deslocamentoColuna;
+        this.jogo.tabuleiro.tabuleiro[dama.linha][dama.coluna] = 0;
+        this.jogo.tabuleiro.tabuleiro[novaLinha][novaColuna] = -1;
+    }
+
+    encontrarPossiveisMovimentos(dama) {
+        let possiveisNovasPosicoes = [];
+        if (dama.rei) {
+            // Verifica movimentos de rei em todas as direções
+            if (this.verificarMovimento(dama, -1, -1)) possiveisNovasPosicoes.push(new Dama(dama.linha - 1, dama.coluna - 1));
+            if (this.verificarMovimento(dama, -1, 1)) possiveisNovasPosicoes.push(new Dama(dama.linha - 1, dama.coluna + 1));
+            if (this.verificarMovimento(dama, 1, -1)) possiveisNovasPosicoes.push(new Dama(dama.linha + 1, dama.coluna - 1));
+            if (this.verificarMovimento(dama, 1, 1)) possiveisNovasPosicoes.push(new Dama(dama.linha + 1, dama.coluna + 1));
+        } else {
+            // Verifica movimentos normais de dama apenas para baixo
+            if (this.verificarMovimento(dama, 1, -1)) possiveisNovasPosicoes.push(new Dama(dama.linha + 1, dama.coluna - 1));
+            if (this.verificarMovimento(dama, 1, 1)) possiveisNovasPosicoes.push(new Dama(dama.linha + 1, dama.coluna + 1));
+        }
+        return possiveisNovasPosicoes;
+    }
+
+    atualizarTabuleiro() {
+        this.jogo.ui.construirTabuleiro();
+        this.jogo.jogadorAtual = this.jogo.trocarJogador(this.jogo.jogadorAtual);
+        this.jogo.ui.showJogadorAtual();
+    }
+
 }
 
 export default Ia;

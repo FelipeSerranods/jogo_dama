@@ -1,11 +1,10 @@
 import Dama from './Dama.js';
 import Ia from './IA.js';
 class Jogo {
-    constructor(tabuleiro, ui, modelo) {
+    constructor(tabuleiro, ui) {
         this.tabuleiro = tabuleiro;
         this.ui = ui;
         this.jogoIniciar = false;
-        this.modelo = modelo;
         this.jogadorAtual = 1;
         this.novaPosicao = [];
         this.posicaoParaCapturar = [];
